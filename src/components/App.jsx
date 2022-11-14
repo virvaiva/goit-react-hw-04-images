@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { fetchPhotos } from './API/API';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,124 +8,97 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Loader } from './Loader/Loader';
 import { Button } from './Button/Button';
 import { Modal } from './Modal/Modal';
+import { useEffect } from 'react';
 
-export class App extends Component {
-  state = {
-    pictureName: '',
-    loading: false,
-    page: 1,
-    perPage: 12,
-    pictures: [],
-    error: null,
-    showModal: false,
-    largeImageURL: '',
-    alt: '',
-    totalImages: 0,
+export function App() {
+  const [pictureName, setPictureName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pictures, setPictures] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [totalImages, setTotalImages] = useState(0);
+
+  const photoInfo = event => {
+    setLargeImageURL(event);
   };
-  photoInfo = event => {
-    this.setState({
-      largeImageURL: event,
-    });
-  };
-  onSearchFormSubmit = pictureName => {
-    if (this.state.pictureName === pictureName) {
+  const onSearchFormSubmit = newPictureName => {
+    if (newPictureName === pictureName) {
       toast.error('Enter the name of the picture');
     }
-    this.setState({
-      pictureName,
-      page: 1,
-      pictures: [],
-    });
+    setPictureName(newPictureName);
+    setPage(1);
+    setPictures([]);
   };
-  async searchArticles() {
-    const { pictureName, page } = this.state;
-    this.setState({ loading: true });
-
-    try {
-      const { data } = await fetchPhotos(pictureName, page);
-      this.setState({
-        pictures: [...this.state.pictures, ...data.hits],
-        totalImages: data.totalHits,
-      });
-
-      if (data.totalHits === 0) {
-        toast.error(`Sorry There are no images "${this.state.name}"`);
-      }
-    } catch (error) {
-      this.setState({ error });
-    } finally {
-      this.setState({ loading: false });
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const { pictureName, page } = this.state;
-
-    if (prevState.pictureName === pictureName && prevState.page === page) {
+  useEffect(() => {
+    if (!pictureName) {
       return;
     }
-    this.searchArticles();
-  }
 
-  loadMoreImages = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
+    setLoading(true);
+    fetchPhotos(pictureName, page)
+      .then(({ data }) => {
+        setPictures(prevPictures => [...prevPictures, ...data.hits]);
+        setTotalImages(data.totalHits);
+        if (data.totalHits === 0) {
+          toast.error(`No images with name "${pictureName}"`);
+        }
+      })
+      .catch(error => {
+        toast.error(`${error}`);
+      })
+      .finally(() => setLoading(false));
+  }, [pictureName, page]);
 
-  togleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
-  render() {
-    const { pictures, loading, showModal, largeImageURL, totalImages, page } =
-      this.state;
-    const restImages = totalImages - page * 12;
-    return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gridGap: '16px',
-          paddingBottom: '24px',
-        }}
-      >
-        <Searchbar onSubmit={this.onSearchFormSubmit} />
-        {pictures.length <= 0 && !loading && (
-          <p
-            style={{
-              textAlign: 'center',
-              textShadow: '4px 4px 2px rgba(150, 150, 150, 1)',
-              fontSize: '40px',
-            }}
-          >
-            Enter the name of the picture ...
-            <MdDriveFileRenameOutline style={{ width: 30, height: 30 }} />
-          </p>
-        )}
+  const loadMoreImages = () => setPage(prevPage => prevPage + 1);
 
-        {pictures.length > 0 && (
-          <ImageGallery
-            pictures={pictures}
-            showModal={this.togleModal}
-            photoInfo={this.photoInfo}
-          />
-        )}
+  const togleModal = () => setShowModal(showModal => !showModal);
 
-        {loading && <Loader loading={loading} />}
+  const restImages = totalImages - page * 12;
 
-        {pictures.length > 0 && restImages > 0 && (
-          <Button title="Load more" onClick={this.loadMoreImages} />
-        )}
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gridGap: '16px',
+        paddingBottom: '24px',
+      }}
+    >
+      <Searchbar onSubmit={onSearchFormSubmit} />
+      {pictures.length <= 0 && !loading && (
+        <p
+          style={{
+            textAlign: 'center',
+            textShadow: '4px 4px 2px rgba(150, 150, 150, 1)',
+            fontSize: '40px',
+          }}
+        >
+          Enter the name of the picture ...
+          <MdDriveFileRenameOutline style={{ width: 30, height: 30 }} />
+        </p>
+      )}
 
-        {showModal && (
-          <Modal onClose={this.togleModal}>
-            <img src={largeImageURL} alt="" />
-          </Modal>
-        )}
-        <ToastContainer autoClose={3000} />
-      </div>
-    );
-  }
+      {pictures.length > 0 && (
+        <ImageGallery
+          pictures={pictures}
+          showModal={togleModal}
+          photoInfo={photoInfo}
+        />
+      )}
+
+      {loading && <Loader loading={loading} />}
+
+      {pictures.length > 0 && restImages > 0 && (
+        <Button title="Load more" onClick={loadMoreImages} />
+      )}
+
+      {showModal && (
+        <Modal onClose={togleModal}>
+          <img src={largeImageURL} alt="" />
+        </Modal>
+      )}
+      <ToastContainer autoClose={3000} />
+    </div>
+  );
 }
