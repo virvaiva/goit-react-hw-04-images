@@ -21,12 +21,6 @@ export function Modal({ onClose, children }) {
     return () => window.removeEventListener('keydown', handleDown);
   }, [onClose]);
 
-  // handleClick = event => {
-  //   if (event.currentTarget === event.target) {
-  //     this.props.onClose();
-  //   }
-  // };
-
   return createPortal(
     <SC.Overlay onClick={handleCloseClick}>
       <SC.Modal>{children}</SC.Modal>
