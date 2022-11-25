@@ -1,56 +1,52 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 import { FcSearch } from 'react-icons/fc';
 import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 import * as SC from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    pictureName: '',
-    pictures: [],
-  };
+export function Searchbar({ onSubmit }) {
+  const [pictureName, setPictureName] = useState('');
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
 
-    if (this.state.pictureName.trim() === '') {
+    if (pictureName.trim() === '') {
       toast.error('Enter the name of the picture');
       return;
     }
-    this.props.onSubmit(this.state.pictureName);
-    this.setState({ pictureName: '' });
+    onSubmit(pictureName);
+    setPictureName('');
   };
 
-  handleInputChange = event => {
+  const handleInputChange = event => {
     const { value } = event.currentTarget;
-    this.setState({ pictureName: value.toLowerCase() });
+    setPictureName(value.toLowerCase());
   };
 
-  render() {
-    return (
-      <SC.Searchbar>
-        <SC.SearchForm onSubmit={this.handleSubmit}>
-          <SC.SearchFormButton type="submit">
-            <SC.SearchFormButtonLabel>
-              <FcSearch style={{ width: 30, height: 30 }} />
-            </SC.SearchFormButtonLabel>
-          </SC.SearchFormButton>
+  return (
+    <SC.Searchbar>
+      <SC.SearchForm onSubmit={handleSubmit}>
+        <SC.SearchFormButton type="submit">
+          <SC.SearchFormButtonLabel>
+            <FcSearch style={{ width: 30, height: 30 }} />
+          </SC.SearchFormButtonLabel>
+        </SC.SearchFormButton>
 
-          <SC.SearchFormInput
-            onChange={this.handleInputChange}
-            className="input"
-            type="text"
-            name="name"
-            value={this.state.pictureName}
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </SC.SearchForm>
-      </SC.Searchbar>
-    );
-  }
+        <SC.SearchFormInput
+          onChange={handleInputChange}
+          className="input"
+          type="text"
+          name="name"
+          value={pictureName}
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </SC.SearchForm>
+    </SC.Searchbar>
+  );
 }
+
 Searchbar.propTypes = {
   pictureName: PropTypes.string,
   handleSubmit: PropTypes.func,
